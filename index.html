@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+
+<h1 style="color:purple;font-family:Calibri,Bold"> INTERACTIVE GRAPHICS </h1>
+<h2> ROTATION FUNCTIONS </h2>
+<button id = "X-AXIS">Rotate X</button>
+<button id = "Y-AXIS">Rotate Y</button>
+<button id = "Z-AXIS">Rotate Z</button>
+<button id = "TOGGLE BUTTON">Toggle Rotation</button>
+<button id = "ORIENT">Change orientation </button>
+
+<h2> PROJECTIONS </h2>
+<button id = "ORTHO"> Click </button>&nbsp;&nbsp;&nbsp;Current : <td><output type ="text" id="pjType"> &nbsp; Orthogonal View&nbsp;&nbsp;</output></td>
+<button id = "PERSPECT"> Click </button>&nbsp;&nbsp;&nbsp;Current : <td><output type ="text" id="pType"> &nbsp; Perspective View&nbsp;&nbsp;</output></td>
+<div>
+<h2> SHADINGS </h2>
+<button id = "SHADE"> SWITCH </button>&nbsp;&nbsp;&nbsp;Current : <td><output type ="text" id="sjType"> &nbsp; Gouraud Shade&nbsp;&nbsp;</output></td>
+</div>
+
+<div>
+<h2> NEAR AND FAR PLANES </h2>
+Near<input id="Slidernear" type="range"
+ min="-1" max="2" step="0.1" value="0.1" /> <td> <output type="text" id="nearp" > 0.1 </output> </td>
+</div>
+<div>
+Far<input id="Sliderfar" type="range"
+ min="0.3" max="5" step="0.1" value="3" /> <td> <output type="text" id="farp" > 3 </output> </td>
+</div>
+
+
+<div>
+<h2> TRASFORMATIONS </h2>
+Scale<input id="slider1" type="range"
+ min="0.1" max="2" step="0.1" value="1" />
+</div>
+
+<div>
+Translate along X <input id="sliderX" type="range"
+ min="-1" max="1" step="0.1" value="0" />
+</div>
+
+<div>
+Traslate along Y <input id="sliderY" type="range"
+ min="-1" max="1" step="0.1" value="0" />
+</div>
+<div>
+Traslate along Z <input id="sliderZ" type="range"
+ min="-1" max="1" step="0.1" value="0" /> <td> <output type="text" id="slidez" > 0 </output> </td>
+</div>
+
+
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+
+attribute  vec4 vPosition;
+varying  vec4 vColor;
+attribute  vec3 vNormal;
+
+varying vec4 fColor;
+varying vec4 vcolor;
+
+
+uniform mat4 modelmatrix ;
+uniform mat4 projectionmatrix;
+uniform mat4 viewmatrix;
+
+uniform vec4 vAmbientProduct;
+uniform vec4 vDiffuseProduct;
+uniform vec4 vSpecularProduct;
+uniform vec4 lightPosition;   
+uniform float vShininess;
+uniform bool shadingFlag;
+varying vec3 fN,fL,fE;
+
+void main()
+{
+    vec3 pos = -(viewmatrix*modelmatrix* vPosition).xyz;
+
+ //  Calculating the light direction 
+    vec3 light = lightPosition.xyz;
+    vec3 L = normalize( light - pos );
+
+    vec3 E = normalize( -pos );
+    vec3 H = normalize( L + E );
+
+    vec4 NN = vec4(vNormal,0);
+
+    vec3 N = normalize( (viewmatrix*modelmatrix*NN).xyz);
+
+	if(shadingFlag)
+	{
+    
+    vec4 ambient = vAmbientProduct;
+    float Kd = max( dot(L, N), 0.0 );
+    vec4  diffuse = Kd*vDiffuseProduct;
+    float Ks = pow( max(dot(N, H), 0.0), vShininess );
+    vec4  specular = Ks * vSpecularProduct;
+
+    if( dot(L, N) < 0.0 ) {
+                            specular = vec4(0.065, 0.066,0.290, 0.0);
+            }
+
+
+    fColor = ambient + diffuse + specular;
+    fColor.a = 1.0;
+	}
+
+	else
+	{
+	fL= L;
+	fN= N;
+	fE= E;
+	}
+
+    gl_Position = projectionmatrix * viewmatrix * modelmatrix * vPosition;
+
+    // gl_Position.z = - gl_Position.z;
+}
+
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+precision mediump float;
+varying vec4 fColor ;
+uniform bool shadingFlag ;
+uniform vec4 fSpecularProduct;
+uniform vec4 fAmbientProduct;
+uniform vec4 fDiffuseProduct;
+uniform float fShininess;
+varying vec3 fN, fL, fE;
+
+ void main()
+        {
+          if(shadingFlag){
+            gl_FragColor = fColor;
+          }else{
+            vec4 fColorF;
+            vec3 H = normalize( fL + fE );
+            vec4 ambient = fAmbientProduct;
+            float Kd = max( dot(fL, fN), 0.0 );
+            vec4 diffuse = Kd * fDiffuseProduct;
+            float Ks = pow( max(dot(fN, H), 0.0), fShininess );
+            vec4 specular = Ks * fSpecularProduct;
+            if( dot(fL, fN) < 0.0 ) {specular = vec4(0.065, 0.066, 0.290, 0.0);}
+            fColorF = ambient + diffuse + specular;
+            fColorF.a = 1.0;
+            gl_FragColor = fColorF;
+          }
+        }
+
+
+</script>
+
+<script type="text/javascript" src="Common/webgl-utils.js"></script>
+<script type="text/javascript" src="Common/initShaders.js"></script>
+<script type="text/javascript" src="Common/MV.js"></script>
+<script type="text/javascript" src="Homework1.js"></script>
+
+<body>
+<div>
+<canvas id="gl-canvas" width="1024" height="1024">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+</div>
+</body>
+</html>
